@@ -1,0 +1,10 @@
+data/
+create_pytorch_datasets.py
+optuna_searches/
+runs/
+temp/
+pbs_script_casper.sh
+__pycache__/
+virtualenvcasper/
+logs/
+
