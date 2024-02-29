@@ -17,22 +17,17 @@ More information about the project and its participants can be found in [here](h
 ## Repository Details
 This repository contains all the source code for the SIDDIS project. As of right now, we are in the process of submitting this work to a journal. More information regarding this will be revealed shortly.
 
-As of now, we are unable to publish the dataset, however, we have published a curated dataset to serve as an example for training, testing and validation. Here are all the features offered by this repository. 
-
 1. Architectural code in PyTorch for our proposed Residual Dense Networks (RDNs) and Residual Channel Attention Models (RCANs).
 2. Extendable code for training, testing and performing hyperparameter searches on a chosen architecture. 
 3. Jupyter notebooks to visualize the outputs from these models and generate required metrics. 
 4. Code for Geomorpohological based downscaling operations. 
 5. Templates for newer architectures. 
 
-Features coming soon
-1. Neural operators to enforce constraints. 
-
 ## Steps to run the code
 
 While we trained the model on a PBS cluster [UCAR CASPER](https://arc.ucar.edu/knowledge_base/70549550), we provide generic shell scripts so it can be run on any GPU/CPU dependant system. We can also provide the PBS scripts upon request.
 
-### Pre-requisites =
+### Pre-requisites 
 1. Have a data folder with the appropriate datasets in .h5 form. This is a pytorch dataset that has been saved in the hdf5 =format. Each entry in the dataset follows the format
 ```
 h5_filename = 'test_file.h5'
@@ -71,11 +66,10 @@ Note that we assume the original dataset has the following format (for a single 
 -dataset
  --high_res
   --- 1.png
+  --- 1.npy
  -- low_res
   --- 1.png
- -- topo
-  --- 1_1.png
-  --- 1_2.png
+  --- 1.npy
 ```
 2. An empty results/ folder.
 3. An empty runs/ folder
@@ -87,10 +81,21 @@ Note that we assume the original dataset has the following format (for a single 
 
 
 ### Running hyperparameter searches
-
 1. 
 
 ### Model Evaluation
-
 1.  
+
+
+### Supporting Notebooks
+
+In order to allow ease of evaluation of the model, we provide a google colab notebook found here https://colab.research.google.com/drive/1ANo82R6XpnW5LVg7aOPNMwkwVDEwhuOh?authuser=1. 
+
+This notebook is designed to 
+1. Load evaluation data for both synthetic data and real-world data
+2. Run and obtain predictions for individual model
+3. An interactive tool to visualize individual predictions from various models for each dataset
+4. Obtain Clopper-Pearson Prediction Intervals (PI) for accuracies.
+5. Conduct multiple comparison test using the Holm-Bonferroni procedure to compare several models. This procedure is designed to control the Family-Wise Error Rate (FWER).
+
 
