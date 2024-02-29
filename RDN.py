@@ -33,18 +33,6 @@ class RDN(nn.Module):
         self.C = num_layers
         self.topo_inclusion = topo_inclusion
 
-        if topo_inclusion == "beggining":
-            self.sfe1_topo_1 = nn.Conv2d(num_channels, num_features, kernel_size=3, padding=3 // 2)
-            self.sfe2_topo_1 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=3 // 2)
-            self.sfe1_topo_2 = nn.Conv2d(num_channels, num_features, kernel_size=3, padding=3 // 2)
-            self.sfe2_topo_2 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=3 // 2)
-        elif topo_inclusion == "horizontal":
-            self.sfe1_topo_1 = nn.Conv2d(num_channels, num_features, kernel_size=3, padding=3 // 2)
-            self.sfe2_topo_1 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=3 // 2)
-        elif topo_inclusion == "vertical":
-            self.sfe1_topo_2 = nn.Conv2d(num_channels, num_features, kernel_size=3, padding=3 // 2)
-            self.sfe2_topo_2 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=3 // 2)    
-        
         # shallow feature extraction
         self.sfe1 = nn.Conv2d(num_channels, num_features, kernel_size=3, padding=3 // 2)
         self.sfe2 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=3 // 2)

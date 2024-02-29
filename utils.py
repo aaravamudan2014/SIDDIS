@@ -114,7 +114,7 @@ def accuracy(pred, ground_truth,low_res_image):
 
 def gen_test_results(model, device, dataset):
   batch_size = 1
-  dataset_object = EvalDataset('data/'+dataset+'.h5')
+  dataset_object = EvalDataset('data/SYN-processed/'+dataset+'.h5')
   print("Total size of ", dataset, " ", len(dataset_object))
   dataloader = DataLoader(dataset=dataset_object, batch_size=batch_size)
   epoch_mcc = AverageMeter()
@@ -184,9 +184,9 @@ def gen_test_results(model, device, dataset):
 
 def gen_Landsat8_results(model, device, dataset_type='Landsat8'):
   batch_size  = 1
-  dataset = EvalDataset('data/'+dataset_type+'.h5')
+  dataset = EvalDataset('data/RW-processed/'+dataset_type+'.h5')
   
-  landsat_dataloader = DataLoader(dataset=landsat_dataset, batch_size=batch_size)
+  landsat_dataloader = DataLoader(dataset=dataset, batch_size=batch_size)
   epoch_mcc = AverageMeter()
   epoch_tpr = AverageMeter()
   epoch_acc = AverageMeter()
@@ -245,131 +245,3 @@ def gen_Landsat8_results(model, device, dataset_type='Landsat8'):
   
   sys.stdout.flush()
   return MCC, ACC
-
-def gen_test_results_combination(model, device, dataset):
-  batch_size = 1
-  test_dataset = EvalDatasetCombination('data/'+dataset+'.h5')
-  test_dataloader = DataLoader(dataset=test_dataset, batch_size=batch_size)
-  epoch_mcc = AverageMeter()
-  epoch_tpr = AverageMeter()
-  epoch_acc = AverageMeter()
-  
-  total_calculated_mcc = 0
-  total_calculated_acc = 0
-  cf_total = None
-  print("processing test data now")
-  with tqdm(total=(len(test_dataset) - 
-            len(test_dataset) % batch_size), ncols=80) as t:
-    eval_epoch = 0
-    t.set_description('test epoch: {}/{}'.format(eval_epoch, 1))
-    for index, data in enumerate(test_dataloader):
-       # print("Currently at batch: {} \n".format(index))
-        
-        rdn_high_res, gmu, high_res, low_res = data
-        rdn_high_res = rdn_high_res.to(device)
-        low_res = low_res.to(device)
-        gmu = gmu.to(device)
-        high_res = high_res.to(device)
-
-        with torch.no_grad():
-            preds = model(rdn_high_res, gmu)
-
-        
-        loss, cf = matthews_correlation_coefficient(preds.cpu()[0,0,:,:].numpy(), high_res.cpu()[0,0,:,:].numpy(), low_res.cpu()[0,0,:,:].numpy())
-        
-        acc = accuracy(preds.cpu()[0,0,:,:].numpy(), high_res.cpu()[0,0,:,:].numpy(), low_res.cpu()[0,0,:,:].numpy())
-        t.set_postfix(loss='{:.6f}'.format(loss))
-        t.update(len(rdn_high_res))
-        if cf_total is None:
-          if len(cf) == 4:
-            cf_total = cf
-        else:
-          if len(cf) == 4:
-            cf_total += cf
-        if not np.isnan(loss):
-          total_calculated_mcc += 1
-          epoch_mcc.update(loss, len(rdn_high_res))
-          
-        if not np.isnan(acc):
-          total_calculated_acc += 1
-          epoch_acc.update(acc, len(rdn_high_res))
-
-  TN, FP, FN, TP = cf_total
-  if TN +FP == 0 or TN +FN == 0 or TN +TP == 0 or FP +FN == 0 or FP +TP == 0 or FN +TP == 0:
-    MCC = 0.0
-  else:
-    numerator = np.log(TP*TN-FP*FN) 
-    denominator = 0.5*(np.log(TP+FP) + np.log(TP+FN) + np.log(TN+FN) + np.log(TN+FP))
-    MCC = np.exp(numerator - denominator)
-  ACC = (TP+TN)/(TP+TN+FP+FN)
-  
-  print('test mcc: {:.4f}'.format(MCC))
-  print('test acc: {:.4f}'.format(ACC))
-  print('total calculated : ', total_calculated_mcc, " out of: ", len(test_dataloader)*batch_size)
-  sys.stdout.flush()
-  return MCC, ACC , total_calculated_mcc, total_calculated_acc
-
-
-def gen_Landsat8_results_combination(model, device, dataset_type='Landsat8_combination'):
-
-  batch_size  = 1
-  landsat_dataset = EvalDatasetCombination('data/'+dataset_type+'.h5')
-  landsat_dataloader = DataLoader(dataset=landsat_dataset, batch_size=batch_size)
-  epoch_mcc = AverageMeter()
-  epoch_tpr = AverageMeter()
-  epoch_acc = AverageMeter()
-  
-  total_calculated_mcc = 0
-  total_calculated_acc = 0
-  cf_total = None
-  with tqdm(total=(len(landsat_dataset) - 
-            len(landsat_dataset) % batch_size), ncols=80) as t:
-    eval_epoch = 0
-    t.set_description('test epoch: {}/{}'.format(eval_epoch, 1))
-    for index, data in enumerate(landsat_dataloader):
-        # print("Currently at index: ", index)
-        rdn_high_res, gmu, high_res, low_res = data
-        rdn_high_res = rdn_high_res.to(device)
-        low_res = low_res.to(device)
-        gmu = gmu.to(device)
-        high_res = high_res.to(device)
-
-        with torch.no_grad():
-            preds = model(rdn_high_res, gmu)
-
-        
-        loss, cf = matthews_correlation_coefficient(preds.cpu()[0,0,:,:].numpy(), high_res.cpu()[0,0,:,:].numpy(), low_res.cpu()[0,0,:,:].numpy())
-        if cf_total is None:
-          if len(cf) == 4:
-            cf_total = cf
-        else:
-          if len(cf) == 4:
-            cf_total += cf
-        
-        acc = accuracy(preds.cpu()[0,0,:,:].numpy(), high_res.cpu()[0,0,:,:].numpy(), low_res.cpu()[0,0,:,:].numpy())
-        t.set_postfix(loss='{:.6f}'.format(loss))
-        t.update(len(rdn_high_res))
-        if not np.isnan(loss):
-          total_calculated_mcc += 1
-          epoch_mcc.update(loss, len(rdn_high_res))
-        if not np.isnan(acc):
-          total_calculated_acc += 1
-          epoch_acc.update(acc, len(rdn_high_res))
-      
-  
-  
-  TN, FP, FN, TP = cf_total
-  if TN +FP == 0 or TN +FN == 0 or TN +TP == 0 or FP +FN == 0 or FP +TP == 0 or FN +TP == 0:
-    MCC = 0.0
-  else:
-    #MCC = (TP*TN-FP*FN)/(np.sqrt((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN)))
-    numerator = np.log(TP*TN-FP*FN) 
-    denominator = 0.5*(np.log(TP+FP) + np.log(TP+FN) + np.log(TN+FN) + np.log(TN+FP))
-    MCC = np.exp(numerator - denominator)
-    ACC = (TP+TN)/(TP+TN+FP+FN)
-    
-  print(dataset_type + ' mcc: {:.4f}'.format(MCC))
-  print(dataset_type + ' acc: {:.4f}'.format(ACC))
-  print('total calculated : ', total_calculated_acc, " out of: ", len(landsat_dataloader))
-  sys.stdout.flush()
-  return None

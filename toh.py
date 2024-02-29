@@ -4,6 +4,12 @@ import scipy.optimize
 import functools
 from numba import jit
 
+import numpy as np
+import scipy.stats
+import scipy.optimize
+import functools
+from numba import jit
+
 
 # ClopperPearsonCI
 #
@@ -48,63 +54,6 @@ def ClopperPearsonCI(k, N, p):
     return lower, upper
 
 
-# ExactMcNemarsTest
-#
-# Implements the p-value (observed significance level) of the exact version of 
-# McNemar's Test for comparing two binomial proportions in terms of matched
-# pairs.
-#
-# SYNTAX
-# pvalue, idxBest = ExactMcNemarsTest(MatchedPairs)
-#
-# INPUTS
-# MatchedPairs: 2D numpy.ndarray of N>=1 rows and 2 columns that only takes 
-#               values 0,1 or True, False. Each row contains the classification 
-#               outcome (correct/incorrect prediction) of 2 classification 
-#               models for a specific sample.
-#
-# OUTPUTS
-# pvalue:  float in [0,1]; p-value (observed significance level) of the test.
-# idxBest: integer in {0,1}; indicates the classification model (column index
-#          of MatchedPairs) with the most number of 1/True's between the two.
-#          The test's alternative hypothesis is that the model with index
-#          idxBest is better performing than the other model.
-#
-# NOTES
-# 1) Beware: no validity checking is performed on the entries of MatchedPairs.
-# 2) Assume that MatchedPairs[:,0] and MatchedPairs[:,1] are paired, i.i.d 
-#    samples generated from model0 and model1 respectively. The null hypothesis
-#    of the test is that the probabilities of observing a discordant pair (1,0)
-#    or (0,1) are equal, i.e., the two models are indistingushable is terms
-#    of clasisfication performance.
-#    Without loss of generality, assume that the number of 
-#    1/True's is higher for model0. Then, the alternative hypothesis states
-#    that the probability of observing (1,0) pairs is higher than observing
-#    (0,1) pairs.
-#    An alpha-level significance test would reject the null hypothesis if
-#    p-value <= alpha and would conclude that model0 is preferable to model1.
-# 3) If both columns of MatchedPairs are identical, idxBest defaults to 0.
-# 4) If the user selects a significance level alpha, she would reject the
-#    null hypothesis, if pvalue <= alpha, and would conclude that the model
-#    with index idxBest is the best performing of the two.
-#
-# DEPENDENCIES
-#  import numpy as np
-#  import scipy.stats
-# 
-# AUTHOR
-#  Georgios C. Anagnostopoulos, June 2020
-#
-def ExactMcNemarsTest(MatchedPairs):
-    n0 = sum((MatchedPairs[:,0] == 1) & (MatchedPairs[:,1] == 0))
-    n1 = sum((MatchedPairs[:,0] == 0) & (MatchedPairs[:,1] == 1))
-    w = max(n0, n1)
-    Nw = n0 + n1
-    idxBest = 0 if n0 >= n1 else 1
-    pvalue = scipy.stats.binom.sf(w-1, Nw, 0.5)
-    return pvalue, idxBest
-
-
 @jit(nopython=True)
 def _logBinomialCDF(n, N, p):
     if n < 0:
@@ -123,7 +72,7 @@ def _logBinomialCDF(n, N, p):
             for k in range(1, n+1):
                 logPMF += np.log(float(N - k + 1) * p / (k * (1.0 - p)))
                 logCDF = np.logaddexp(logCDF, logPMF)
-            
+
     return logCDF if logCDF <= 0.0 else 0.0
 
 
@@ -131,7 +80,7 @@ def _logBinomialCDF(n, N, p):
 def _negNullPowerFunctionSuissaShuster(p, z, N):
     def inz(_n, _z):
         return np.ceil( (_z * np.sqrt(_n) + _n) / 2.0 )
-    
+
     if z == 0.0:
         logValue = 0.0
     else:
@@ -140,17 +89,16 @@ def _negNullPowerFunctionSuissaShuster(p, z, N):
         else:
             k = np.ceil(z * z)
             logConst = np.log(1.0 - p) - np.log(p)
-    
+
             logCoeff = N * np.log(p)
             logTerm = logCoeff + _logBinomialCDF(N - inz(N, z), N, 0.5)
             logValue = logTerm
-            for n in range(N, k, -1): # n = N, ..., k+1    
+            for n in range(N, k, -1): # n = N, ..., k+1
                 logCoeff += np.log(n) - np.log(N - n + 1) + logConst
                 logTerm = logCoeff + _logBinomialCDF(n - 1 - inz(n - 1, z), n - 1, 0.5)
                 logValue = np.logaddexp(logValue, logTerm)
-        
-    return -logValue
 
+    return -logValue
 
 # SuissaShusterTest
 #
@@ -221,17 +169,120 @@ def SuissaShusterTest(MatchedPairs):
         pvalue = np.exp(- minRes.fun)
     return pvalue, idxBest
 
-
-# sort_matchedtuples_models
+# ExactMcNemarsTest
 #
+# Implements the p-value (observed significance level) of the exact version of 
+# McNemar's Test for comparing two binomial proportions in terms of matched
+# pairs.
+#
+# SYNTAX
+# pvalue, idxBest = ExactMcNemarsTest(MatchedPairs)
+#
+# INPUTS
+# MatchedPairs: 2D numpy.ndarray of N>=1 rows and 2 columns that only takes 
+#               values 0,1 or True, False. Each row contains the classification 
+#               outcome (correct/incorrect prediction) of 2 classification 
+#               models for a specific sample.
+#
+# OUTPUTS
+# pvalue:  float in [0,1]; p-value (observed significance level) of the test.
+# idxBest: integer in {0,1}; indicates the classification model (column index
+#          of MatchedPairs) with the most number of 1/True's between the two.
+#          The test's alternative hypothesis is that the model with index
+#          idxBest is better performing than the other model.
+#
+# NOTES
+# 1) Beware: no validity checking is performed on the entries of MatchedPairs.
+# 2) Assume that MatchedPairs[:,0] and MatchedPairs[:,1] are paired, i.i.d 
+#    samples generated from model0 and model1 respectively. The null hypothesis
+#    of the test is that the probabilities of observing a discordant pair (1,0)
+#    or (0,1) are equal, i.e., the two models are indistingushable is terms
+#    of clasisfication performance.
+#    Without loss of generality, assume that the number of 
+#    1/True's is higher for model0. Then, the alternative hypothesis states
+#    that the probability of observing (1,0) pairs is higher than observing
+#    (0,1) pairs.
+#    An alpha-level significance test would reject the null hypothesis if
+#    p-value <= alpha and would conclude that model0 is preferable to model1.
+# 3) If both columns of MatchedPairs are identical, idxBest defaults to 0.
+# 4) If the user selects a significance level alpha, she would reject the
+#    null hypothesis, if pvalue <= alpha, and would conclude that the model
+#    with index idxBest is the best performing of the two.
+#
+# DEPENDENCIES
+#  import numpy as np
+#  import scipy.stats
 # 
-def sort_matchedtuples_models(MatchedTuples, model_names):
-    num_correct_decisions = np.sum(MatchedTuples, axis=0)
-    sorted_indices = num_correct_decisions.argsort()[::-1]
-    sorted_MatchedTuples = MatchedTuples[:, sorted_indices]
-    sorted_model_names = [model_names[i] for i in sorted_indices]
-    return sorted_MatchedTuples, sorted_model_names
+# AUTHOR
+#  Georgios C. Anagnostopoulos, June 2020
+#
+def ExactMcNemarsTest(MatchedPairs):
+    n0 = sum((MatchedPairs[:,0] == 1) & (MatchedPairs[:,1] == 0))
+    n1 = sum((MatchedPairs[:,0] == 0) & (MatchedPairs[:,1] == 1))
+    w = max(n0, n1)
+    Nw = n0 + n1
+    idxBest = 0 if n0 >= n1 else 1
+    pvalue = scipy.stats.binom.sf(w-1, Nw, 0.5)
+    return pvalue, idxBest
 
+# AsymptoticMcNemarsTest
+#
+# Implements the p-value (observed significance level) of the asymptotic version of 
+# McNemar's Test for comparing two binomial proportions in terms of matched
+# pairs.
+#
+# SYNTAX
+# pvalue, idxBest = AsymptotictMcNemarsTest(MatchedPairs)
+#
+# INPUTS
+# MatchedPairs: 2D numpy.ndarray of N>=1 rows and 2 columns that only takes 
+#               values 0,1 or True, False. Each row contains the classification 
+#               outcome (correct/incorrect prediction) of 2 classification 
+#               models for a specific sample.
+#
+# OUTPUTS
+# pvalue:  float in [0,1]; p-value (observed significance level) of the test.
+# idxBest: integer in {0,1}; indicates the classification model (column index
+#          of MatchedPairs) with the most number of 1/True's between the two.
+#          The test's alternative hypothesis is that the model with index
+#          idxBest is better performing than the other model.
+#
+# NOTES
+# 1) Beware: no validity checking is performed on the entries of MatchedPairs.
+# 2) Assume that MatchedPairs[:,0] and MatchedPairs[:,1] are paired, i.i.d 
+#    samples generated from model0 and model1 respectively. The null hypothesis
+#    of the test is that the probabilities of observing a discordant pair (1,0)
+#    or (0,1) are equal, i.e., the two models are indistingushable is terms
+#    of clasisfication performance.
+#    Without loss of generality, assume that the number of 
+#    1/True's is higher for model0. Then, the alternative hypothesis states
+#    that the probability of observing (1,0) pairs is higher than observing
+#    (0,1) pairs.
+#    An alpha-level significance test would reject the null hypothesis if
+#    p-value <= alpha and would conclude that model0 is preferable to model1.
+# 3) If both columns of MatchedPairs are identical, idxBest defaults to 0.
+# 4) If the user selects a significance level alpha, she would reject the
+#    null hypothesis, if pvalue <= alpha, and would conclude that the model
+#    with index idxBest is the best performing of the two.
+#
+# DEPENDENCIES
+#  import numpy as np
+#  import scipy.stats
+# 
+# AUTHOR
+#  Georgios C. Anagnostopoulos, February 2024
+#
+def AsymptoticMcNemarsTest(MatchedPairs):
+    n0 = sum((MatchedPairs[:,0] == 1) & (MatchedPairs[:,1] == 0))
+    n1 = sum((MatchedPairs[:,0] == 0) & (MatchedPairs[:,1] == 1))
+    idxBest = 0 if n0 >= n1 else 1
+    num_discordant_pairs = n0 + n1
+    if num_discordant_pairs != 0:
+        z = (n1 - n0)**2 / num_discordant_pairs
+        pvalue = scipy.stats.chi2.sf(z, 1)
+    else:
+        pvalue = 0.5
+    return pvalue, idxBest
 
 # HolmBonferroniProcedure
 #
@@ -302,7 +353,7 @@ def sort_matchedtuples_models(MatchedTuples, model_names):
 #
 def HolmBonferroniProcedure(sorted_MatchedTuples, pValueFunc, mode):
     N, M = sorted_MatchedTuples.shape  # N: number of test samples, M: number of models
-        
+
     # Determine how many comparisons should be considered
     if mode is 'best_only':
         # comparisons of best vs rest
@@ -310,9 +361,9 @@ def HolmBonferroniProcedure(sorted_MatchedTuples, pValueFunc, mode):
         C = M-1   # number of comparisons
     else:
         # comparisons of best vs rest, 2nd best vs rest, etc.
-        max_idx = M-1   
-        C = M * (M-1) // 2   # number of comparisons 
-    
+        max_idx = M-1
+        C = M * (M-1) // 2   # number of comparisons
+
     # Compute p-values based on a pair-wise test
     pValues = np.empty(C, dtype=np.float64)
     ModelPairIndeces = np.empty((C,2), dtype=int)
@@ -327,35 +378,41 @@ def HolmBonferroniProcedure(sorted_MatchedTuples, pValueFunc, mode):
 
     # Sort p-values in ascending order
     indices = pValues.argsort()
-    pValues = pValues[indices] 
+    pValues = pValues[indices]
     ModelPairIndeces = ModelPairIndeces[indices, :]
-    
+
     # compute adjusted p-values
     adj_pValues = np.empty_like(pValues)
     adj_pValues[0] = min(1.0, C * pValues[0])
     for c in range(1,C):
         adj_pValues[c] = max(adj_pValues[c-1], (C-c)*pValues[c])
-    
+
     return adj_pValues, ModelPairIndeces
-    
+
+def sort_matchedtuples_models(MatchedTuples, model_names):
+    num_correct_decisions = np.sum(MatchedTuples, axis=0)
+    sorted_indices = num_correct_decisions.argsort()[::-1]
+    sorted_MatchedTuples = MatchedTuples[:, sorted_indices]
+    sorted_model_names = [model_names[i] for i in sorted_indices]
+    return sorted_MatchedTuples, sorted_model_names
+
 
 def mk_adj_pvalue_matrix(adj_pValues, ModelPairIndeces, mode):
-    C = ModelPairIndeces.shape[0] 
-    
+    C = ModelPairIndeces.shape[0]
+
     if mode is 'best_only':
         M = C+1
         AdjPvalueMatrix = np.ones((1,M), dtype=float)
     else:
         M = int((1 + np.sqrt(8*C+1))/2)
         AdjPvalueMatrix = np.ones((M,M), dtype=float)
-    
+
     for c in range(C):
         row = ModelPairIndeces[c,0]
         col = ModelPairIndeces[c,1]
         AdjPvalueMatrix[row,col] = adj_pValues[c]
 
     return AdjPvalueMatrix
-
 
 # Sample Demonstration Code 
 if __name__ == "__main__":

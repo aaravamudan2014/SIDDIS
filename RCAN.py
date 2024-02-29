@@ -58,38 +58,10 @@ class RCAN(nn.Module):
         self.dropout_topo_2 = nn.Dropout(dropout_prob_topo_2)
         self.dropout_input = nn.Dropout(dropout_prob_input)
 
-        if topo_inclusion == "beggining":
-            self.sfe1_topo_1 = nn.Conv2d(num_channels, num_features, kernel_size=3, padding=3 // 2)
-            self.sfe2_topo_1 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=3 // 2)
-            self.sfe1_topo_2 = nn.Conv2d(num_channels, num_features, kernel_size=3, padding=3 // 2)
-            self.sfe2_topo_2 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=3 // 2)
-            
-            self.rgs_topo_1 = nn.Sequential(*[RG(num_features, num_rcab, reduction) for _ in range(num_rg)])
-            self.conv1_topo_1 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=1)
-            
-            self.rgs_topo_2 = nn.Sequential(*[RG(num_features, num_rcab, reduction) for _ in range(num_rg)])
-            self.conv1_topo_2 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=1)
-            
-            
-        elif topo_inclusion == "vertical":
-            self.sfe1_topo_1 = nn.Conv2d(num_channels, num_features, kernel_size=3, padding=3 // 2)
-            self.sfe2_topo_1 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=3 // 2)
-            self.rgs_topo_1 = nn.Sequential(*[RG(num_features, num_rcab, reduction) for _ in range(num_rg)])
-            self.conv1_topo_1 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=1)
-            
-        elif topo_inclusion == "horizontal":
-            self.sfe1_topo_2 = nn.Conv2d(num_channels, num_features, kernel_size=3, padding=3 // 2)
-            self.sfe2_topo_2 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=3 // 2)    
-            self.rgs_topo_2 = nn.Sequential(*[RG(num_features, num_rcab, reduction) for _ in range(num_rg)])
-            self.conv1_topo_2 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=1)
-    
+        
         # self.conv2 = nn.Conv2d(num_features, 1, kernel_size=3, padding=1)
 
-        if topo_inclusion == "beggining":
-            self.conv2 = nn.Conv2d(num_features*3, num_channels, kernel_size=3, padding=3 // 2)
-        elif topo_inclusion in ["vertical", "horizontal"] :
-            self.conv2 = nn.Conv2d(num_features*2, num_channels, kernel_size=3, padding=3 // 2)
-        elif topo_inclusion == "none":
+        if topo_inclusion == "none":
             self.conv2 = nn.Conv2d(num_features, num_channels, kernel_size=3, padding=3 // 2)
             
     

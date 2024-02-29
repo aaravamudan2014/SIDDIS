@@ -59,32 +59,17 @@ for image_index in req_indices:
     patch_idx += 1
   
 ```
-
-Note that we assume the original dataset has the following format (for a single image as an example)
-
-```
--dataset
- --high_res
-  --- 1.png
-  --- 1.npy
- -- low_res
-  --- 1.png
-  --- 1.npy
-```
-2. An empty results/ folder.
-3. An empty runs/ folder
-4. A correctly populated run_models.sh
-
+ This can also be achieved by simply running the `create_dataset.py` file for each individual dataset.
 
 ### Training the model
-1. 
+1. Once the dataset has been prepared (training.h5 and validation.h5), create a `runs` folder in the main directory, change the `mode` variable in `run_models.sh` to `train`.
 
 
 ### Running hyperparameter searches
-1. 
+1. First make sure that there is an empty folder called `optuna_searches`. Once the datasets have been prepared (training.h5 and validation.h5), create a `runs` folder in the main directory, change the `mode` variable in `run_models.sh` to `optuna_search`.
 
 ### Model Evaluation
-1.  
+1.  Once the model has been trained and best models are saved in `runs/*run_directory/*` and the test dataset has been prepared (.h5 files), change the the `mode` variable in `run_models.sh` to `evaluate`. An alternative to running evaluation and replicating the paper results is by running the Colab notebook described in the following subsection.
 
 
 ### Supporting Notebooks
@@ -97,5 +82,47 @@ This notebook is designed to
 3. An interactive tool to visualize individual predictions from various models for each dataset
 4. Obtain Clopper-Pearson Prediction Intervals (PI) for accuracies.
 5. Conduct multiple comparison test using the Holm-Bonferroni procedure to compare several models. This procedure is designed to control the Family-Wise Error Rate (FWER).
+
+### Dataset
+
+The dataset is available under the `data/` directory. In order to run the code, make sure to unzip all the files under the data folder. The following paragraph describes the dataset in detail. 
+
+Abstract: This dataset consists of synthetic and real-world data of flooding events for selected regions in the world. For both the synthetic and real-world data, once the flood inundation maps (FIM) were obtained, chips of 100x100 pixels were extracted with each pixel representing a 30mx30m area. The low-resolution water fraction maps were constructed by a bilinear downsampling of the aforementioned high-resolution maps to produce 10x10 images with each pixel representing a 300mx300m area. 
+The synthetic data was produced from hydrodynamic simulations of riverine flooding in the State of Iowa using the HEC-RAS model. The low- and high-resolution synthetic images were constructed from model outputs. These raw image patches are provided as low-resolution (300m) and high-resolution (30m) Tiff files. Additionally, we provide processed versions of these GeoTiff files that have been split into training, test and validation dataset, each of which contains low-res (10x10 floats between 0 and 1) and high-res (100x100 binary values) images as both .npy and .png files. 
+Secondly, we provide real-world Landsat-8 flooding data for the regions of Des Moines and Cedar River in Iowa, Meuse River in Western Europe, Red River of the North and the Nasia River in Ghana. We extract images with 30mx30m patches from Landsat-8’s 30m product and then evaluate the Spectral Water Index (SWI) of the multi-channel Landsat-8 images. The SWI was used to threshold the image to classify pixels as flooded and non-flooded. This threshold was determined based on quantitative comparison of the histograms between flooded and non-flooded regions. Similar to the synthetic data, this dataset contains the GeoTiff files for both low- and high-resolution images. We also provide the processed versions of each of the real-world datasets in .npy and .png files. Details on the processing and generation of the datasets are provided in Aravamudan et. al. 2024 [placeholder until paper is published]. 
+
+Instructions:
+We provide processed data from two sources: (i) synthetic data from the Iowa Flood Center and (ii) Landsat-8 real-world data. Firstly, this dataset contains the raw GeoTiff images obtained from physics-based simulations and data post-processed from Landsat-8. In addition to this, for convenience, we also provide the processed images for all datasets. For each of the provided datasets and for each region, there is a folder containing the high-resolution flood inundation map —  a 100x100 binary-valued image — and a folder containing the low-resolution map — a 10x10 float-valued image with values between 0 and 1. 
+The dataset is organized as follows.
+
+1. SYN-raw — contains tiff files for low- and high-resolution images 
+   - IowaSynthetic_HRES_FIMs.zip
+   - IowaSynthetic_LRES_FIMs.zip
+
+2. SYN-processed
+   - test.zip
+   - training.zip
+   - validation.zip
+3. RW-raw
+   - EU_HRES_FIMs.zip
+   - EU_LRES_FIMs.zip
+   - IowaCedar_HRES_FIMs.zip
+   - IowaCedar_LRES_FIMs.zip
+   - IowaDesMoines_HRES_FIMs.zip
+   - IowaDesMoines_LRES_FIMs.zip
+   - Ghana_HRES_FIMs.zip
+   - Ghana_LRES_FIMs.zip
+   - RedRiver_HRES_FIMs.zip
+   - RedRiver_LRES_FIMs.zip
+4.  RW-processed
+   - EU.zip
+   - Ghana.zip
+   - IowaCedar.zip
+   - IowaDesMoines.zip
+   - RedRiver.zip
+
+For each of the processed data folders, each zip contains two sub-folders namely high_res and low_res which further contain the .npy and .png images of the high-resolution and low-resolution images respectively. The file names have been indexed by the same number so that the low-resolution image can be mapped to the high-resolution image accurately. 
+
+
 
 
