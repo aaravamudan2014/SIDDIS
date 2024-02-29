@@ -74,7 +74,7 @@ for image_index in req_indices:
 
 ### Supporting Notebooks
 
-In order to allow ease of evaluation of the model, we provide a google colab notebook found here https://colab.research.google.com/drive/1ANo82R6XpnW5LVg7aOPNMwkwVDEwhuOh?authuser=1. 
+In order to allow ease of evaluation of the model, we provide a google colab notebook found here https://colab.research.google.com/drive/1ANo82R6XpnW5LVg7aOPNMwkwVDEwhuOh?authuser=1. It is reccommended to create a copy of this in your local drive. 
 
 This notebook is designed to 
 1. Load evaluation data for both synthetic data and real-world data
@@ -122,6 +122,7 @@ The dataset is organized as follows.
    - RedRiver.zip
 
 For each of the processed data folders, each zip contains two sub-folders namely high_res and low_res which further contain the .npy and .png images of the high-resolution and low-resolution images respectively. The file names have been indexed by the same number so that the low-resolution image can be mapped to the high-resolution image accurately. 
+
 
 
 
